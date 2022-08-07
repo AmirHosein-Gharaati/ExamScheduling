@@ -44,32 +44,124 @@
     </div>
 
     <div>
-      <v-form ref="form" v-model="valid" lazy-validation>
-        <v-row class="red">
-          <v-col cols="4">
-            <v-menu
-              v-model="menu"
-              :close-on-content-click="false"
-              :nudge-right="40"
-              transition="scale-transition"
-              offset-y
-              min-width="auto"
-            >
-              <template v-slot:activator="{ on, attrs }">
-                <v-text-field
-                  v-model="date"
-                  label="Date Range"
-                  prepend-icon="mdi-calendar"
-                  readonly
-                  v-bind="attrs"
-                  v-on="on"
-                ></v-text-field>
-              </template>
-              <v-date-picker v-model="date" range></v-date-picker>
-            </v-menu>
-          </v-col>
-        </v-row>
-      </v-form>
+      <v-card class="pa-8">
+        <v-form ref="form" v-model="valid" lazy-validation>
+          <div class="d-flex justify-center"><h1 class="pb-4">Form</h1></div>
+          <v-row>
+            <v-col cols="6">
+              <v-menu
+                v-model="menu"
+                :close-on-content-click="false"
+                :nudge-right="40"
+                transition="scale-transition"
+                offset-y
+                min-width="auto"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-text-field
+                    v-model="date"
+                    label="Date Range"
+                    prepend-icon="mdi-calendar"
+                    readonly
+                    v-bind="attrs"
+                    v-on="on"
+                    outlined
+                  ></v-text-field>
+                </template>
+                <v-date-picker v-model="date" range no-title></v-date-picker>
+              </v-menu>
+            </v-col>
+            <v-col cols="6">
+              <v-menu
+                ref="menu2"
+                v-model="menu2"
+                :close-on-content-click="false"
+                :return-value.sync="dates"
+                transition="scale-transition"
+                offset-y
+                min-width="auto"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-combobox
+                    v-model="dates"
+                    multiple
+                    chips
+                    small-chips
+                    label="Exclude Dates"
+                    prepend-icon="mdi-calendar"
+                    readonly
+                    v-bind="attrs"
+                    v-on="on"
+                    outlined
+                  ></v-combobox>
+                </template>
+                <v-date-picker v-model="dates" multiple no-title scrollable>
+                  <v-spacer></v-spacer>
+                  <v-btn text color="primary" @click="menu2 = false">
+                    Cancel
+                  </v-btn>
+                  <v-btn text color="primary" @click="$refs.menu2.save(dates)">
+                    OK
+                  </v-btn>
+                </v-date-picker>
+              </v-menu>
+            </v-col>
+          </v-row>
+
+          <v-row>
+            <v-col cols="3">
+              <v-text-field
+                v-model="numberValue"
+                hide-details
+                label="Slot Duration"
+                type="number"
+                outlined
+              />
+            </v-col>
+            <v-col cols="3">
+              <v-text-field
+                v-model="numberValue"
+                hide-details
+                label="Number of Slots"
+                type="number"
+                outlined
+              />
+            </v-col>
+
+            <v-col cols="6">
+              <v-menu
+                ref="menuTimePicker"
+                v-model="menuTimePicker"
+                :close-on-content-click="false"
+                :nudge-right="40"
+                :return-value.sync="time"
+                transition="scale-transition"
+                offset-y
+                max-width="290px"
+                min-width="290px"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-text-field
+                    v-model="time"
+                    label="Picker in menu"
+                    prepend-icon="mdi-clock-time-four-outline"
+                    readonly
+                    v-bind="attrs"
+                    v-on="on"
+                    outlined
+                  ></v-text-field>
+                </template>
+                <v-time-picker
+                  v-if="menuTimePicker"
+                  v-model="menuTimePickerModel"
+                  full-width
+                  @click:minute="$refs.menuTimePicker.save(menuTimePickerModel)"
+                ></v-time-picker>
+              </v-menu>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card>
     </div>
   </div>
 </template>
@@ -86,11 +178,15 @@ export default Vue.extend({
     mode: "stack",
     weekday: [6, 0, 1, 2, 3, 4, 5],
     weekdays: [{ text: "Sat - Fri", value: [6, 0, 1, 2, 3, 4, 5] }],
-    dates: ["2019-09-10", "2019-09-20"],
+    dates: [],
     value: "",
     events: [],
     valid: true,
     menu: false,
+    menu2: false,
+    menuTimePicker: null,
+    menuTimePickerModel: null,
+    numberValue: null,
     date: null,
     colors: [
       "blue",
