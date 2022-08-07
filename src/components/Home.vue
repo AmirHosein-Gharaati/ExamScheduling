@@ -134,7 +134,7 @@
                 v-model="menuTimePicker"
                 :close-on-content-click="false"
                 :nudge-right="40"
-                :return-value.sync="time"
+                :return-value.sync="menuTimePickerModel"
                 transition="scale-transition"
                 offset-y
                 max-width="290px"
@@ -142,7 +142,7 @@
               >
                 <template v-slot:activator="{ on, attrs }">
                   <v-text-field
-                    v-model="time"
+                    v-model="menuTimePickerModel"
                     label="Picker in menu"
                     prepend-icon="mdi-clock-time-four-outline"
                     readonly
