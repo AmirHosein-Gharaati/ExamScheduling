@@ -28,7 +28,7 @@
           <v-icon>mdi-chevron-right</v-icon>
         </v-btn>
       </v-sheet>
-      <v-sheet height="600">
+      <!-- <v-sheet height="600">
         <v-calendar
           ref="calendar"
           v-model="value"
@@ -40,7 +40,7 @@
           :event-color="getEventColor"
           @change="getEvents"
         ></v-calendar>
-      </v-sheet>
+      </v-sheet> -->
     </div>
 
     <div>
@@ -49,115 +49,56 @@
           <div class="d-flex justify-center"><h1 class="pb-4">Form</h1></div>
           <v-row>
             <v-col cols="6">
-              <v-menu
-                v-model="menu"
-                :close-on-content-click="false"
-                :nudge-right="40"
-                transition="scale-transition"
-                offset-y
-                min-width="auto"
-              >
-                <template v-slot:activator="{ on, attrs }">
-                  <v-text-field
-                    v-model="date"
-                    label="Date Range"
-                    prepend-icon="mdi-calendar"
-                    readonly
-                    v-bind="attrs"
-                    v-on="on"
-                    outlined
-                  ></v-text-field>
-                </template>
-                <v-date-picker v-model="date" range no-title></v-date-picker>
-              </v-menu>
+              <div>
+                <h2>Students Data</h2>
+                <input
+                  type="file"
+                  v-on:change="readFile($event, dataType.student)"
+                  placeholder="Upload file"
+                  accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                />
+              </div>
             </v-col>
             <v-col cols="6">
-              <v-menu
-                ref="menu2"
-                v-model="menu2"
-                :close-on-content-click="false"
-                :return-value.sync="dates"
-                transition="scale-transition"
-                offset-y
-                min-width="auto"
-              >
-                <template v-slot:activator="{ on, attrs }">
-                  <v-combobox
-                    v-model="dates"
-                    multiple
-                    chips
-                    small-chips
-                    label="Exclude Dates"
-                    prepend-icon="mdi-calendar"
-                    readonly
-                    v-bind="attrs"
-                    v-on="on"
-                    outlined
-                  ></v-combobox>
-                </template>
-                <v-date-picker v-model="dates" multiple no-title scrollable>
-                  <v-spacer></v-spacer>
-                  <v-btn text color="primary" @click="menu2 = false">
-                    Cancel
-                  </v-btn>
-                  <v-btn text color="primary" @click="$refs.menu2.save(dates)">
-                    OK
-                  </v-btn>
-                </v-date-picker>
-              </v-menu>
+              <div>
+                <h2>Professor Data</h2>
+                <input
+                  type="file"
+                  v-on:change="readFile($event, dataType.professor)"
+                  placeholder="Upload file"
+                  accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                />
+              </div>
             </v-col>
           </v-row>
 
           <v-row>
             <v-col cols="3">
               <v-text-field
-                v-model="numberValue"
+                v-model="numberOfDays"
                 hide-details
-                label="Slot Duration"
+                label="Number of Days"
                 type="number"
                 outlined
               />
             </v-col>
             <v-col cols="3">
               <v-text-field
-                v-model="numberValue"
+                v-model="numberOfSlotsPerDay"
                 hide-details
-                label="Number of Slots"
+                label="Number of Slots Per Day"
                 type="number"
                 outlined
               />
             </v-col>
-
-            <v-col cols="6">
-              <v-menu
-                ref="menuTimePicker"
-                v-model="menuTimePicker"
-                :close-on-content-click="false"
-                :nudge-right="40"
-                :return-value.sync="menuTimePickerModel"
-                transition="scale-transition"
-                offset-y
-                max-width="290px"
-                min-width="290px"
-              >
-                <template v-slot:activator="{ on, attrs }">
-                  <v-text-field
-                    v-model="menuTimePickerModel"
-                    label="Picker in menu"
-                    prepend-icon="mdi-clock-time-four-outline"
-                    readonly
-                    v-bind="attrs"
-                    v-on="on"
-                    outlined
-                  ></v-text-field>
-                </template>
-                <v-time-picker
-                  v-if="menuTimePicker"
-                  v-model="menuTimePickerModel"
-                  full-width
-                  @click:minute="$refs.menuTimePicker.save(menuTimePickerModel)"
-                ></v-time-picker>
-              </v-menu>
+            <v-col cols="3">
+              <v-text-field
+                v-model="numberOfTries"
+                hide-details
+                label="Number of Tries"
+                type="number"
+                outlined
+              />
             </v-col>
           </v-row>
         </v-form>
@@ -166,52 +107,59 @@
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import Vue from "vue";
+import * as XLSX from "xlsx";
+
+import { readCourses, readStudents, readProfessors } from "../helpers/readData";
 
 export default Vue.extend({
   name: "Home",
 
   data: () => ({
-    type: "week",
-    types: ["month", "week", "day", "4day"],
-    mode: "stack",
-    weekday: [6, 0, 1, 2, 3, 4, 5],
-    weekdays: [{ text: "Sat - Fri", value: [6, 0, 1, 2, 3, 4, 5] }],
-    dates: [],
-    value: "",
-    events: [],
+    numberOfDays: null,
+    numberOfSlotsPerDay: null,
+    numberOfTries: null,
     valid: true,
-    menu: false,
-    menu2: false,
-    menuTimePicker: null,
-    menuTimePickerModel: null,
-    numberValue: null,
-    date: null,
-    colors: [
-      "blue",
-      "indigo",
-      "deep-purple",
-      "cyan",
-      "green",
-      "orange",
-      "grey darken-1",
-    ],
+    students: null,
+    courses: null,
+    professors: null,
+    dataType: {
+      student: 0,
+      professor: 1,
+    },
   }),
   methods: {
-    getEvents({ start, end }) {
-      console.log(start, end);
-    },
-    getEventColor(event: any) {
-      return event.color;
-    },
-    rnd(a: number, b: number) {
-      return Math.floor((b - a + 1) * Math.random()) + a;
-    },
-  },
-  computed: {
-    dateRangeText() {
-      return this.dates.join(" ~ ");
+    readFile(event, type) {
+      const file = event?.target?.files[0];
+      const fileReader = new FileReader();
+      fileReader.readAsArrayBuffer(file);
+
+      fileReader.onload = () => {
+        const arrayBuffer = fileReader.result;
+        const data = new Uint8Array(arrayBuffer);
+
+        const arr = [];
+        for (let i = 0; i != data.length; ++i)
+          arr[i] = String.fromCharCode(data[i]);
+
+        const bstr = arr.join("");
+        const workbook = XLSX.read(bstr, { type: "binary" });
+        const first_sheet_name = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[first_sheet_name];
+        const arrayList = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        if (type === this.dataType.student) {
+          this.courses = readCourses(arrayList);
+          this.students = readStudents(arrayList);
+        } else if (type === this.dataType.professor) {
+          if (!this.courses) {
+            alert("ابتدا باید اطلاعات دانشجویان و دروس پر شود");
+            return;
+          }
+          this.professors = readProfessors(arrayList, this.courses);
+        }
+      };
     },
   },
 });
