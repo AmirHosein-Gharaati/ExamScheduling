@@ -101,6 +101,11 @@
               />
             </v-col>
           </v-row>
+          <v-row>
+            <v-col cols="12" class="d-flex justify-center">
+              <v-btn @click="submit">Submit</v-btn>
+            </v-col>
+          </v-row>
         </v-form>
       </v-card>
     </div>
@@ -110,6 +115,7 @@
 <script>
 import Vue from "vue";
 import * as XLSX from "xlsx";
+import axios from "axios";
 
 import { readCourses, readStudents, readProfessors } from "../helpers/readData";
 
@@ -122,12 +128,15 @@ export default Vue.extend({
     numberOfTries: null,
     valid: true,
     students: null,
-    courses: null,
+    coursesMap: null,
     professors: null,
     dataType: {
       student: 0,
       professor: 1,
     },
+    hypeParametersList: [
+      { population_size: 100, max_generation: 100, mutation_probability: 0.7 },
+    ],
   }),
   methods: {
     readFile(event, type) {
@@ -150,16 +159,69 @@ export default Vue.extend({
         const arrayList = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
         if (type === this.dataType.student) {
-          this.courses = readCourses(arrayList);
+          this.coursesMap = readCourses(arrayList);
           this.students = readStudents(arrayList);
         } else if (type === this.dataType.professor) {
-          if (!this.courses) {
+          if (!this.coursesMap) {
             alert("ابتدا باید اطلاعات دانشجویان و دروس پر شود");
             return;
           }
-          this.professors = readProfessors(arrayList, this.courses);
+          this.professors = readProfessors(arrayList, this.coursesMap);
         }
       };
+    },
+    submit() {
+      const data = {
+        courses: this.courses,
+        students: this.students,
+        professors: this.professors,
+        time_slots: this.timeSlots,
+        number_of_tries: +this.numberOfTries,
+        number_of_slots_per_day: +this.numberOfSlotsPerDay,
+        hyper_parameters_list: this.hypeParametersList,
+      };
+
+      const customConfig = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+
+      axios
+        .post("http://localhost:5000/", data, customConfig)
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+  },
+  computed: {
+    courses() {
+      const coursesList = [];
+
+      for (const [name, id] of this.coursesMap.entries()) {
+        coursesList.push({ title: name, pk: id });
+      }
+
+      return coursesList;
+    },
+    timeSlots() {
+      if (this.numberOfSlotsPerDay > 0 && this.numberOfDays > 0) {
+        const timeSlotsArray = [];
+
+        for (
+          let num = 1;
+          num <= this.numberOfSlotsPerDay * this.numberOfDays;
+          num++
+        ) {
+          timeSlotsArray.push({ pk: num, is_available: 1, is_holiday: 0 });
+        }
+
+        return timeSlotsArray;
+      }
+      return [];
     },
   },
 });

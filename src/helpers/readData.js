@@ -1,10 +1,10 @@
 export function readCourses(rawDataArray) {
   const map = new Map();
   const headers = rawDataArray[0];
-  const coursesNames = headers.shift();
+  headers.shift();
 
-  for (let index = 0; index < coursesNames.length; index++) {
-    map.set(coursesNames[index], index + 1);
+  for (let index = 0; index < headers.length; index++) {
+    map.set(headers[index], index + 1);
   }
 
   return map;
@@ -16,6 +16,10 @@ export function readStudents(rawDataArray) {
   const studentsData = [];
 
   studentCoursesRow.forEach((row) => {
+    if (row.length === 0) {
+      return;
+    }
+
     const student = {
       pk: row[0],
       courses: [],
@@ -47,7 +51,9 @@ export function readProfessors(rawDataArray, coursesMap) {
       const courseName = rawDataArray[i][j];
       const courseId = coursesMap.get(courseName);
 
-      professor.courses.push(courseId);
+      if (!!courseId) {
+        professor.courses.push(courseId);
+      }
     }
 
     professorsData.push(professor);
