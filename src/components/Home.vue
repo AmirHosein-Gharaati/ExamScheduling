@@ -128,7 +128,7 @@
       </v-card>
     </div>
 
-    <v-card class="my-8 pa-8">
+    <v-card v-if="loading || results" class="my-8 pa-8">
       <div
         v-if="loading"
         class="d-flex align-center justify-center pa-2 my-4 orange"
