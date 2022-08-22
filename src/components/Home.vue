@@ -264,9 +264,8 @@ export default Vue.extend({
       };
 
       axios
-        .post("http://localhost:5000/", data, customConfig)
+        .post("https://exam-scheduling-shz.herokuapp.com/", data, customConfig)
         .then((res) => {
-          console.log(res.data);
           this.results = res.data;
         })
         .catch((err) => {
@@ -282,7 +281,6 @@ export default Vue.extend({
         id,
         id + +this.numberOfSlotsPerDay
       );
-      console.log(val);
       return val;
     },
     isValidDay(dayId) {
