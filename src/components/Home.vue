@@ -28,19 +28,6 @@
           <v-icon>mdi-chevron-right</v-icon>
         </v-btn>
       </v-sheet>
-      <!-- <v-sheet height="600">
-        <v-calendar
-          ref="calendar"
-          v-model="value"
-          :weekdays="weekday"
-          :type="type"
-          :events="events"
-          :event-overlap-mode="mode"
-          :event-overlap-threshold="30"
-          :event-color="getEventColor"
-          @change="getEvents"
-        ></v-calendar>
-      </v-sheet> -->
     </div>
 
     <div>
@@ -73,7 +60,7 @@
           </v-row>
 
           <v-row>
-            <v-col cols="3">
+            <v-col cols="4">
               <v-text-field
                 v-model="numberOfDays"
                 hide-details
@@ -82,7 +69,7 @@
                 outlined
               />
             </v-col>
-            <v-col cols="3">
+            <v-col cols="4">
               <v-text-field
                 v-model="numberOfSlotsPerDay"
                 hide-details
@@ -91,7 +78,7 @@
                 outlined
               />
             </v-col>
-            <v-col cols="3">
+            <v-col cols="4">
               <v-text-field
                 v-model="numberOfTries"
                 hide-details
@@ -101,6 +88,37 @@
               />
             </v-col>
           </v-row>
+
+          <v-row>
+            <v-col cols="4">
+              <v-text-field
+                v-model="hyperParametersModel.population_size"
+                hide-details
+                label="Population Size"
+                type="number"
+                outlined
+              />
+            </v-col>
+            <v-col cols="4">
+              <v-text-field
+                v-model="hyperParametersModel.max_generation"
+                hide-details
+                label="Maximum Generation"
+                type="number"
+                outlined
+              />
+            </v-col>
+            <v-col cols="4">
+              <v-text-field
+                v-model="hyperParametersModel.mutation_probability"
+                hide-details
+                label="Mutation Probability"
+                type="number"
+                outlined
+              />
+            </v-col>
+          </v-row>
+
           <v-row>
             <v-col cols="12" class="d-flex justify-center">
               <v-btn @click="submit">Submit</v-btn>
@@ -110,34 +128,44 @@
       </v-card>
     </div>
 
-    <v-card class="pa-8">
+    <v-card class="my-8 pa-8">
       <div
         v-if="loading"
         class="d-flex align-center justify-center pa-2 my-4 orange"
       >
-        Loading...
+        Waiting for the results...
       </div>
       <div v-if="results">
         <h1 class="d-flex justify-center blue white--text">
           Fitness: {{ results.fitness }}
         </h1>
-        <div
-          v-for="(time_slot, i) in results.schedule"
-          :key="i"
-          class="d-flex flex-column pa-2 my-4 lime lighten-3"
-        >
-          <div>
-            <h1 class="px-4">Time Slot: {{ i }}</h1>
-          </div>
-          <div
-            v-for="exam in time_slot"
-            :key="exam.pk"
-            class="d-flex align-center justify-end pa-2 ma-2"
-          >
-            <h3 v-if="exam.professor" class="px-4">
-              استاد: {{ exam.professor }}
-            </h3>
-            <h2 class="px-4">درس: {{ exam.title }}</h2>
+        <div v-for="dayId in +numberOfDays" :key="dayId">
+          <div v-if="isValidDay(dayId)" class="my-16">
+            <h1 class="px-4">Day: {{ dayId }}</h1>
+            <div
+              v-for="slot in getProperSlotsByDayId(dayId)"
+              :key="slot.time_slot"
+            >
+              <div v-if="isValidTimeSlot(slot)">
+                <div>
+                  <h2 class="px-4">
+                    Time Slot:
+                    {{ getProperTimeSlotNumber(dayId, slot.time_slot) }}
+                  </h2>
+                </div>
+                <div
+                  v-for="exam in slot.courses"
+                  :key="exam.courses"
+                  class="d-flex align-center justify-end pa-2 ma-2 lime lighten-4"
+                >
+                  <h3 v-if="exam.professor" class="px-4">
+                    استاد: {{ exam.professor }}
+                  </h3>
+                  <h3 class="px-4">درس: {{ exam.title }}</h3>
+                </div>
+              </div>
+            </div>
+            <v-divider class="blue-grey darken-3 pt-1"></v-divider>
           </div>
         </div>
       </div>
@@ -169,9 +197,11 @@ export default Vue.extend({
       student: 0,
       professor: 1,
     },
-    hyperParametersList: [
-      { population_size: 600, max_generation: 300, mutation_probability: 0.9 },
-    ],
+    hyperParametersModel: {
+      population_size: null,
+      max_generation: null,
+      mutation_probability: null,
+    },
   }),
   methods: {
     readFile(event, type) {
@@ -209,6 +239,14 @@ export default Vue.extend({
       this.loading = true;
       this.results = null;
 
+      const hyperParametersList = [
+        {
+          population_size: +this.hyperParametersModel.population_size,
+          max_generation: +this.hyperParametersModel.max_generation,
+          mutation_probability: +this.hyperParametersModel.mutation_probability,
+        },
+      ];
+
       const data = {
         courses: this.courses,
         students: this.students,
@@ -216,7 +254,7 @@ export default Vue.extend({
         time_slots: this.timeSlots,
         number_of_tries: +this.numberOfTries,
         number_of_slots_per_day: +this.numberOfSlotsPerDay,
-        hyper_parameters_list: this.hyperParametersList,
+        hyper_parameters_list: hyperParametersList,
       };
 
       const customConfig = {
@@ -228,8 +266,8 @@ export default Vue.extend({
       axios
         .post("http://localhost:5000/", data, customConfig)
         .then((res) => {
-          console.log(JSON.parse(res.data));
-          this.results = JSON.parse(res.data);
+          console.log(res.data);
+          this.results = res.data;
         })
         .catch((err) => {
           console.log(err);
@@ -237,6 +275,32 @@ export default Vue.extend({
         .finally(() => {
           this.loading = false;
         });
+    },
+    getProperSlotsByDayId(dayId) {
+      const id = (+dayId - 1) * this.numberOfSlotsPerDay;
+      const val = this.results.schedule.slice(
+        id,
+        id + +this.numberOfSlotsPerDay
+      );
+      console.log(val);
+      return val;
+    },
+    isValidDay(dayId) {
+      const daySlots = this.getProperSlotsByDayId(dayId);
+      let emptyDays = 0;
+
+      for (let i = 0; i < daySlots.length; i++) {
+        if (!this.isValidTimeSlot(daySlots[i])) {
+          emptyDays += 1;
+        }
+      }
+      return emptyDays < +this.numberOfSlotsPerDay;
+    },
+    isValidTimeSlot(slot) {
+      return slot.courses.length > 0;
+    },
+    getProperTimeSlotNumber(dayId, timeSlotId) {
+      return +timeSlotId - (+dayId - 1) * +this.numberOfSlotsPerDay;
     },
   },
   computed: {
