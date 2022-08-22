@@ -109,6 +109,39 @@
         </v-form>
       </v-card>
     </div>
+
+    <v-card class="pa-8">
+      <div
+        v-if="loading"
+        class="d-flex align-center justify-center pa-2 my-4 orange"
+      >
+        Loading...
+      </div>
+      <div v-if="results">
+        <h1 class="d-flex justify-center blue white--text">
+          Fitness: {{ results.fitness }}
+        </h1>
+        <div
+          v-for="(time_slot, i) in results.schedule"
+          :key="i"
+          class="d-flex flex-column pa-2 my-4 lime lighten-3"
+        >
+          <div>
+            <h1 class="px-4">Time Slot: {{ i }}</h1>
+          </div>
+          <div
+            v-for="exam in time_slot"
+            :key="exam.pk"
+            class="d-flex align-center justify-end pa-2 ma-2"
+          >
+            <h3 v-if="exam.professor" class="px-4">
+              استاد: {{ exam.professor }}
+            </h3>
+            <h2 class="px-4">درس: {{ exam.title }}</h2>
+          </div>
+        </div>
+      </div>
+    </v-card>
   </div>
 </template>
 
@@ -130,12 +163,14 @@ export default Vue.extend({
     students: null,
     coursesMap: null,
     professors: null,
+    results: null,
+    loading: false,
     dataType: {
       student: 0,
       professor: 1,
     },
-    hypeParametersList: [
-      { population_size: 100, max_generation: 100, mutation_probability: 0.7 },
+    hyperParametersList: [
+      { population_size: 600, max_generation: 300, mutation_probability: 0.9 },
     ],
   }),
   methods: {
@@ -171,6 +206,9 @@ export default Vue.extend({
       };
     },
     submit() {
+      this.loading = true;
+      this.results = null;
+
       const data = {
         courses: this.courses,
         students: this.students,
@@ -178,7 +216,7 @@ export default Vue.extend({
         time_slots: this.timeSlots,
         number_of_tries: +this.numberOfTries,
         number_of_slots_per_day: +this.numberOfSlotsPerDay,
-        hyper_parameters_list: this.hypeParametersList,
+        hyper_parameters_list: this.hyperParametersList,
       };
 
       const customConfig = {
@@ -190,10 +228,14 @@ export default Vue.extend({
       axios
         .post("http://localhost:5000/", data, customConfig)
         .then((res) => {
-          console.log(res);
+          console.log(JSON.parse(res.data));
+          this.results = JSON.parse(res.data);
         })
         .catch((err) => {
           console.log(err);
+        })
+        .finally(() => {
+          this.loading = false;
         });
     },
   },
