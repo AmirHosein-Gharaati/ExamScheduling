@@ -311,6 +311,10 @@ export default Vue.extend({
     },
     timeSlotIsinDays(timeSlotId, dayIds) {
       let isInDays = false;
+      if (!dayIds.length) {
+        return false;
+      }
+
       dayIds.forEach((dayId) => {
         if (this.timeSlotIsInDay(timeSlotId, dayId)) {
           isInDays = true;
