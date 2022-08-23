@@ -259,7 +259,7 @@ export default Vue.extend({
       };
 
       axios
-        .post("http://localhost:5000/", data, customConfig)
+        .post("https://exam-scheduling.cse-shirazu.ir/", data, customConfig)
         .then((res) => {
           this.results = res.data;
         })
