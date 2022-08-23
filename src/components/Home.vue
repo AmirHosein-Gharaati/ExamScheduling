@@ -1,35 +1,5 @@
 <template>
   <div>
-    <div id="calendar" v-if="false">
-      <v-sheet tile height="54" class="d-flex">
-        <v-btn icon class="ma-2" @click="$refs.calendar.prev()">
-          <v-icon>mdi-chevron-left</v-icon>
-        </v-btn>
-        <v-select
-          v-model="type"
-          :items="types"
-          dense
-          outlined
-          hide-details
-          class="ma-2"
-          label="type"
-        ></v-select>
-        <v-select
-          v-model="weekday"
-          :items="weekdays"
-          dense
-          outlined
-          hide-details
-          label="weekdays"
-          class="ma-2"
-        ></v-select>
-        <v-spacer></v-spacer>
-        <v-btn icon class="ma-2" @click="$refs.calendar.next()">
-          <v-icon>mdi-chevron-right</v-icon>
-        </v-btn>
-      </v-sheet>
-    </div>
-
     <div>
       <v-card class="pa-8">
         <v-form ref="form" v-model="valid" lazy-validation>
@@ -86,6 +56,29 @@
                 type="number"
                 outlined
               />
+            </v-col>
+          </v-row>
+
+          <v-row>
+            <v-col cols="6">
+              <v-select
+                v-model="notAvailableDaysModel"
+                :items="notAvailableDaysItems"
+                label="Not Available Days"
+                multiple
+                outlined
+                hide-details
+              ></v-select>
+            </v-col>
+            <v-col cols="6">
+              <v-select
+                v-model="holidaysModel"
+                :items="holidaysItems"
+                label="Holidays"
+                multiple
+                outlined
+                hide-details
+              ></v-select>
             </v-col>
           </v-row>
 
@@ -193,6 +186,8 @@ export default Vue.extend({
     professors: null,
     results: null,
     loading: false,
+    notAvailableDaysModel: null,
+    holidaysModel: null,
     dataType: {
       student: 0,
       professor: 1,
@@ -264,7 +259,7 @@ export default Vue.extend({
       };
 
       axios
-        .post("https://exam-scheduling.cse-shirazu.ir/", data, customConfig)
+        .post("http://localhost:5000/", data, customConfig)
         .then((res) => {
           this.results = res.data;
         })
@@ -276,7 +271,7 @@ export default Vue.extend({
         });
     },
     getProperSlotsByDayId(dayId) {
-      const id = (+dayId - 1) * this.numberOfSlotsPerDay;
+      const id = (+dayId - 1) * +this.numberOfSlotsPerDay;
       const val = this.results.schedule.slice(
         id,
         id + +this.numberOfSlotsPerDay
@@ -300,8 +295,44 @@ export default Vue.extend({
     getProperTimeSlotNumber(dayId, timeSlotId) {
       return +timeSlotId - (+dayId - 1) * +this.numberOfSlotsPerDay;
     },
+    range(start, end) {
+      const items = [];
+
+      for (let i = start; i < end; i++) {
+        items.push(i);
+      }
+
+      return items;
+    },
+    timeSlotIsInDay(timeSlotId, dayId) {
+      const start = (dayId - 1) * +this.numberOfSlotsPerDay;
+      const end = dayId * +this.numberOfSlotsPerDay;
+      return timeSlotId > start && timeSlotId <= end;
+    },
+    timeSlotIsinDays(timeSlotId, dayIds) {
+      let isInDays = false;
+      dayIds.forEach((dayId) => {
+        if (this.timeSlotIsInDay(timeSlotId, dayId)) {
+          isInDays = true;
+          return;
+        }
+      });
+      return isInDays;
+    },
   },
   computed: {
+    holidaysItems() {
+      if (+this.numberOfDays > 0) {
+        return this.range(1, +this.numberOfDays + 1);
+      }
+      return [];
+    },
+    notAvailableDaysItems() {
+      if (+this.numberOfDays > 0) {
+        return this.range(1, +this.numberOfDays + 1);
+      }
+      return [];
+    },
     courses() {
       const coursesList = [];
 
@@ -312,17 +343,33 @@ export default Vue.extend({
       return coursesList;
     },
     timeSlots() {
-      if (this.numberOfSlotsPerDay > 0 && this.numberOfDays > 0) {
+      if (+this.numberOfSlotsPerDay > 0 && +this.numberOfDays > 0) {
         const timeSlotsArray = [];
 
         for (
-          let num = 1;
-          num <= this.numberOfSlotsPerDay * this.numberOfDays;
-          num++
+          let timeSlotId = 1;
+          timeSlotId <= +this.numberOfSlotsPerDay * +this.numberOfDays;
+          timeSlotId++
         ) {
-          timeSlotsArray.push({ pk: num, is_available: 1, is_holiday: 0 });
-        }
+          const isAvailable = this.timeSlotIsinDays(
+            timeSlotId,
+            this.notAvailableDaysModel
+          )
+            ? 0
+            : 1;
+          const isHoliday = this.timeSlotIsinDays(
+            timeSlotId,
+            this.holidaysModel
+          )
+            ? 1
+            : 0;
 
+          timeSlotsArray.push({
+            pk: timeSlotId,
+            is_available: isAvailable,
+            is_holiday: isHoliday,
+          });
+        }
         return timeSlotsArray;
       }
       return [];
