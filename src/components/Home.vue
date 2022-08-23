@@ -264,7 +264,7 @@ export default Vue.extend({
       };
 
       axios
-        .post("http://exam-scheduling.cse-shirazu.ir/", data, customConfig)
+        .post("https://exam-scheduling.cse-shirazu.ir/", data, customConfig)
         .then((res) => {
           this.results = res.data;
         })
