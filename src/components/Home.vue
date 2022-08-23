@@ -311,7 +311,7 @@ export default Vue.extend({
     },
     timeSlotIsinDays(timeSlotId, dayIds) {
       let isInDays = false;
-      if (!dayIds.length) {
+      if (!dayIds) {
         return false;
       }
 
