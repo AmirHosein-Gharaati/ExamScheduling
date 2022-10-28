@@ -62,9 +62,9 @@
           <v-row>
             <v-col cols="6">
               <v-select
-                v-model="notAvailableDaysModel"
-                :items="notAvailableDaysItems"
-                label="Not Available Days"
+                v-model="notAvailableDaysSlotsModel"
+                :items="notAvailableDaysSlotsItems"
+                label="Not Available Days Slots"
                 multiple
                 outlined
                 hide-details
@@ -186,7 +186,7 @@ export default Vue.extend({
     professors: null,
     results: null,
     loading: false,
-    notAvailableDaysModel: null,
+    notAvailableDaysSlotsModel: null,
     holidaysModel: null,
     dataType: {
       student: 0,
@@ -323,6 +323,17 @@ export default Vue.extend({
       });
       return isInDays;
     },
+    arrayEquals(a, b) {
+      return (
+        Array.isArray(a) &&
+        Array.isArray(b) &&
+        a.length === b.length &&
+        a.every((val, index) => val === b[index])
+      );
+    },
+    generateNotAvailableItem(dayNumber, slotId) {
+      return `Day ${dayNumber} Slot ${slotId}`;
+    },
   },
   computed: {
     holidaysItems() {
@@ -331,9 +342,20 @@ export default Vue.extend({
       }
       return [];
     },
-    notAvailableDaysItems() {
-      if (+this.numberOfDays > 0) {
-        return this.range(1, +this.numberOfDays + 1);
+    notAvailableDaysSlotsItems() {
+      if (+this.numberOfDays > 0 && +this.numberOfSlotsPerDay > 0) {
+        let items = [];
+        for (let dayNumber = 1; dayNumber <= +this.numberOfDays; dayNumber++) {
+          for (
+            let slotNumber = 1;
+            slotNumber <= +this.numberOfSlotsPerDay;
+            slotNumber++
+          ) {
+            items.push(this.generateNotAvailableItem(dayNumber, slotNumber));
+          }
+        }
+
+        return items;
       }
       return [];
     },
@@ -355,12 +377,18 @@ export default Vue.extend({
           timeSlotId <= +this.numberOfSlotsPerDay * +this.numberOfDays;
           timeSlotId++
         ) {
-          const isAvailable = this.timeSlotIsinDays(
-            timeSlotId,
-            this.notAvailableDaysModel
-          )
+          const dayNumber =
+            Math.floor((timeSlotId - 1) / +this.numberOfSlotsPerDay) + 1;
+          const slotNumber = ((timeSlotId - 1) % +this.numberOfSlotsPerDay) + 1;
+
+          const isAvailable = this.notAvailableDaysSlotsModel.find((item) => {
+            return (
+              item === this.generateNotAvailableItem(dayNumber, slotNumber)
+            );
+          })
             ? 0
             : 1;
+
           const isHoliday = this.timeSlotIsinDays(
             timeSlotId,
             this.holidaysModel
