@@ -83,6 +83,31 @@
           </v-row>
 
           <v-row>
+            <v-col cols="6">
+              <v-select
+                v-model="firstAndSecondYearCourseModel"
+                :items="courses"
+                label="First And Second Year Exams"
+                multiple
+                outlined
+                hide-details
+                item-text="title"
+              ></v-select>
+            </v-col>
+
+            <v-col cols="6">
+              <v-select
+                v-model="firstAndSecondYearCoursesTimesModel"
+                :items="firstAndSecondYearCoursesTimes"
+                label="General Exams Days"
+                multiple
+                outlined
+                hide-details
+              ></v-select>
+            </v-col>
+          </v-row>
+
+          <v-row>
             <v-col cols="4">
               <v-text-field
                 v-model="hyperParametersModel.population_size"
@@ -188,6 +213,8 @@ export default Vue.extend({
     loading: false,
     notAvailableDaysSlotsModel: null,
     holidaysModel: null,
+    firstAndSecondYearCourseModel: null,
+    firstAndSecondYearCoursesTimesModel: null,
     dataType: {
       student: 0,
       professor: 1,
@@ -243,7 +270,7 @@ export default Vue.extend({
       ];
 
       const data = {
-        courses: this.courses,
+        courses: this.coursesItemsForRequest,
         students: this.students,
         professors: this.professors,
         time_slots: this.timeSlots,
@@ -323,20 +350,18 @@ export default Vue.extend({
       });
       return isInDays;
     },
-    arrayEquals(a, b) {
-      return (
-        Array.isArray(a) &&
-        Array.isArray(b) &&
-        a.length === b.length &&
-        a.every((val, index) => val === b[index])
-      );
-    },
     generateNotAvailableItem(dayNumber, slotId) {
       return `Day ${dayNumber} Slot ${slotId}`;
     },
   },
   computed: {
     holidaysItems() {
+      if (+this.numberOfDays > 0) {
+        return this.range(1, +this.numberOfDays + 1);
+      }
+      return [];
+    },
+    firstAndSecondYearCoursesTimes() {
       if (+this.numberOfDays > 0) {
         return this.range(1, +this.numberOfDays + 1);
       }
@@ -359,11 +384,31 @@ export default Vue.extend({
       }
       return [];
     },
+    coursesItemsForRequest() {
+      const courses = this.courses;
+
+      courses.forEach((course) => {
+        if (this.firstAndSecondYearCourseModel?.includes(course.title)) {
+          course.is_first = true;
+        } else {
+          course.is_first = false;
+        }
+      });
+
+      return courses;
+    },
     courses() {
+      if (!this.coursesMap) {
+        return [];
+      }
+
       const coursesList = [];
 
       for (const [name, id] of this.coursesMap.entries()) {
-        coursesList.push({ title: name, pk: id });
+        coursesList.push({
+          title: name,
+          pk: id,
+        });
       }
 
       return coursesList;
@@ -381,7 +426,7 @@ export default Vue.extend({
             Math.floor((timeSlotId - 1) / +this.numberOfSlotsPerDay) + 1;
           const slotNumber = ((timeSlotId - 1) % +this.numberOfSlotsPerDay) + 1;
 
-          const isAvailable = this.notAvailableDaysSlotsModel.find((item) => {
+          const isAvailable = this.notAvailableDaysSlotsModel?.find((item) => {
             return (
               item === this.generateNotAvailableItem(dayNumber, slotNumber)
             );
@@ -396,10 +441,16 @@ export default Vue.extend({
             ? 1
             : 0;
 
+          const hasGeneralExam = this.timeSlotIsinDays(
+            timeSlotId,
+            this.firstAndSecondYearCoursesTimesModel
+          );
+
           timeSlotsArray.push({
             pk: timeSlotId,
             is_available: isAvailable,
             is_holiday: isHoliday,
+            has_general_exam: hasGeneralExam,
           });
         }
         return timeSlotsArray;
