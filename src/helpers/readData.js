@@ -4,13 +4,15 @@ export function readCourses(rawDataArray) {
   headers.shift();
 
   for (let index = 0; index < headers.length; index++) {
-    map.set(headers[index], index + 1);
+    if (headers[index].toString().startsWith("29033")) {
+      map.set(headers[index], index + 1);
+    }
   }
 
   return map;
 }
 
-export function readStudents(rawDataArray) {
+export function readStudents(rawDataArray, coursesMap) {
   const studentCoursesRow = rawDataArray.slice(1);
 
   const studentsData = [];
@@ -26,7 +28,7 @@ export function readStudents(rawDataArray) {
     };
 
     for (let i = 1; i < row.length; i++) {
-      if (row[i]) {
+      if (coursesMap.get(i) && row[i]) {
         student.courses.push(i);
       }
     }

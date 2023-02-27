@@ -233,7 +233,7 @@ export default Vue.extend({
 
       fileReader.onload = () => {
         const arrayBuffer = fileReader.result;
-        const data = new Uint8Array(arrayBuffer);
+        const data = new Uint16Array(arrayBuffer);
 
         const arr = [];
         for (let i = 0; i != data.length; ++i)
@@ -247,13 +247,13 @@ export default Vue.extend({
 
         if (type === this.dataType.student) {
           this.coursesMap = readCourses(arrayList);
-          this.students = readStudents(arrayList);
+          this.students = readStudents(arrayList, this.coursesMap);
         } else if (type === this.dataType.professor) {
           if (!this.coursesMap) {
             alert("ابتدا باید اطلاعات دانشجویان و دروس پر شود");
             return;
           }
-          this.professors = readProfessors(arrayList, this.coursesMap);
+          this.professors = []; // readProfessors(arrayList, this.coursesMap);
         }
       };
     },
@@ -272,12 +272,14 @@ export default Vue.extend({
       const data = {
         courses: this.coursesItemsForRequest,
         students: this.students,
-        professors: this.professors,
+        professors: [],
         time_slots: this.timeSlots,
         number_of_tries: +this.numberOfTries,
         number_of_slots_per_day: +this.numberOfSlotsPerDay,
         hyper_parameters_list: hyperParametersList,
       };
+
+      console.log(data);
 
       const customConfig = {
         headers: {
@@ -286,7 +288,7 @@ export default Vue.extend({
       };
 
       axios
-        .post("https://exam-scheduling.cse-shirazu.ir/", data, customConfig)
+        .post("http://localhost:5000/", data, customConfig)
         .then((res) => {
           this.results = res.data;
         })
