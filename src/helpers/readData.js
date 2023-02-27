@@ -5,7 +5,7 @@ export function readCourses(rawDataArray) {
 
   for (let index = 0; index < headers.length; index++) {
     if (headers[index].toString().startsWith("29033")) {
-      map.set(headers[index], index + 1);
+      map.set(index + 1, headers[index]);
     }
   }
 

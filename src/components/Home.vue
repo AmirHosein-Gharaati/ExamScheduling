@@ -406,7 +406,7 @@ export default Vue.extend({
 
       const coursesList = [];
 
-      for (const [name, id] of this.coursesMap.entries()) {
+      for (const [id, name] of this.coursesMap.entries()) {
         coursesList.push({
           title: name,
           pk: id,
