@@ -26,7 +26,7 @@ export function readStudents(rawDataArray) {
     };
 
     for (let i = 1; i < row.length; i++) {
-      if (row[i] === 1) {
+      if (row[i]) {
         student.courses.push(i);
       }
     }
