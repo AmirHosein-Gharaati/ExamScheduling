@@ -61,7 +61,7 @@ export function readCourses(rawDataArray) {
   courses = filterCourses(courses);
 
   for (let index = 0; index < courses.length; index++) {
-    map.set(index + 1, courseIdAndTitle.get(courses[index]));
+    map.set(courses[index], courseIdAndTitle.get(courses[index]));
   }
 
   return map;
@@ -81,11 +81,14 @@ function filterCourses(courses) {
 }
 
 export function readStudents(rawDataArray, coursesMap) {
+  const courses = rawDataArray[0];
   const studentCoursesRow = rawDataArray.slice(1);
 
   const studentsData = [];
 
-  studentCoursesRow.forEach((row) => {
+  for (let index = 0; index < studentCoursesRow.length; index++) {
+    const row = studentCoursesRow[index];
+
     if (row.length === 0) {
       return;
     }
@@ -96,13 +99,13 @@ export function readStudents(rawDataArray, coursesMap) {
     };
 
     for (let i = 1; i < row.length; i++) {
-      if (coursesMap.get(i) && row[i]) {
-        student.courses.push(i);
+      if (coursesMap.get(courses[i - 1]) && row[i]) {
+        student.courses.push(courses[i - 1]);
       }
     }
 
     studentsData.push(student);
-  });
+  }
 
   return studentsData;
 }
