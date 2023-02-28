@@ -291,6 +291,7 @@ export default Vue.extend({
         .post("http://localhost:5000/", data, customConfig)
         .then((res) => {
           this.results = res.data;
+          console.log(res.data);
         })
         .catch((err) => {
           console.log(err);
