@@ -18,7 +18,6 @@ const courseIdAndTitle = new Map([
   [290332191, "روشهاي محاسبات عددي"],
   [290332201, "ريزپردازنده"],
   [290332202, "آزريزپردازنده"],
-  [290332202, "آزريزپردازنده"],
   [290332211, "مدارهاي الكترونيكي"],
   [290332221, "شبكه هاي كامپيوتري"],
   [290332222, "آزشبكه هاي كامپيوتري"],
@@ -52,18 +51,33 @@ const courseIdAndTitle = new Map([
   [290376181, "بازشناسي آماري الگوي پيشرفته"],
 ]);
 
+const labCoursesIds = [290332162, 290332172, 290332202, 290332222];
+
 export function readCourses(rawDataArray) {
   const map = new Map();
-  const headers = rawDataArray[0];
-  headers.shift();
+  let courses = rawDataArray[0];
+  courses.shift();
 
-  for (let index = 0; index < headers.length; index++) {
-    if (headers[index].toString().startsWith("29033")) {
-      map.set(index + 1, courseIdAndTitle.get(headers[index]));
-    }
+  courses = filterCourses(courses);
+
+  for (let index = 0; index < courses.length; index++) {
+    map.set(index + 1, courseIdAndTitle.get(courses[index]));
   }
 
   return map;
+}
+
+function filterCourses(courses) {
+  let newCourses = courses.filter(isCECourse).filter(isNotLabCourse);
+  return newCourses;
+
+  function isCECourse(course) {
+    return course.toString().startsWith("29033");
+  }
+
+  function isNotLabCourse(course) {
+    return !labCoursesIds.includes(course);
+  }
 }
 
 export function readStudents(rawDataArray, coursesMap) {
